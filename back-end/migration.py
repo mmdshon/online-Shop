@@ -35,6 +35,7 @@ if not os.path.exists(database_path):
             description TEXT NOT NULL,
             price DECIMAL(10, 2) NOT NULL,
             category_id INTEGER NOT NULL,
+            image VARCHAR(100) NOT NULL
             FOREIGN KEY (category_id) REFERENCES Categories(category_id)
         )
     ''')
