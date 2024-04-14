@@ -13,6 +13,8 @@ import { OrdersList } from "./resource db/orders";
 import { OrderCreat } from "./resource db/orderCreate";
 import { Order_details_list } from "./resource db/orderdetails";
 import { OrderDetails_Creat } from "./resource db/OrderDetails_Create";
+import { Payment_list } from "./resource db/payments";
+import { Payment_Creat } from "./resource db/PaymentCreate";
 
 export const App = () => (
   <Admin dataProvider={dataProvider} authProvider={authProvider}>
@@ -36,6 +38,13 @@ export const App = () => (
       edit={EditGuesser}
       show={ShowGuesser}
       create={OrderDetails_Creat}
+    />
+    <Resource
+      name="Payments"
+      list={Payment_list}
+      edit={EditGuesser}
+      show={ShowGuesser}
+      create={Payment_Creat}
     />
   </Admin>
 );
