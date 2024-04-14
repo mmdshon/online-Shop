@@ -1,4 +1,4 @@
-# shop-admin
+# test-admin
 
 ## Installation
 
