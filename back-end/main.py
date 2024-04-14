@@ -542,6 +542,108 @@ def update_payment_by_id(id):
     updated = update_payment(order_id, payment_method, amount,id)
     return jsonify(updated), 200
 # ---------------------payment-----------------------
+# -----------------feedback---------------------------
+
+#feedback crud function
+def get_all_feedbacks():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Feedback')
+    feedbacks = cur.fetchall()
+    final_feedbacks = []
+    for feedback in feedbacks:
+        final_feedbacks.append({
+            "id": feedback[0],
+            "user_id": feedback[1],
+            "order_id": feedback[2],
+            "rating": feedback[3],
+            "comment": feedback[4],
+            "feedback_date": feedback[5],
+        })
+    conn.close()
+    return final_feedbacks
+
+def get_feedback(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM feedback WHERE feedback_id = ?',(id,))
+    feedback = cur.fetchone()
+    conn.close()
+    final_feedback = {
+            "id": feedback[0],
+            "user_id": feedback[1],
+            "order_id": feedback[2],
+            "rating": feedback[3],
+            "comment": feedback[4],
+            "feedback_date": feedback[5],
+    }
+    return final_feedback
+
+def create_feedback(user_id, order_id,rating,comment):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    cur.execute('INSERT INTO Feedback (user_id, order_id,rating,comment,feedback_date) VALUES (?, ?, ?, ?,?)', (user_id, order_id,rating,comment, created_at))
+    conn.commit()
+    conn.close()
+    return "ok"
+
+def delete_Feedback(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM Feedback WHERE feedback_id = ?', (id,))
+    conn.commit()
+    conn.close()
+    
+def update_Feedback(user_id, order_id,rating,comment,id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('UPDATE Feedback SET user_id = ?, order_id = ?, rating = ?, comment = ? WHERE feedback_id = ?', (user_id, order_id,rating,comment,id))
+    conn.commit()
+    conn.close()
+    return get_feedback(id)
+
+# feedback routes
+@app.route('/Feedback', methods=['GET'])
+def list_feedback():
+    feedback_result = get_all_feedbacks()
+    response = jsonify(feedback_result)
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
+    response.headers['Content-Range'] = len(feedback_result)
+    return response
+
+@app.route('/Feedback/<int:id>', methods=['GET'])
+def feedback(id):
+    feedback = get_feedback(id)
+    if feedback is None:
+        return '', 404
+    return jsonify(feedback), 200
+
+@app.route('/Feedback', methods=['POST'])
+def add_feedback():
+    user_id = request.json['user_id']
+    order_id = request.json['order_id']
+    rating = request.json['rating']
+    comment = request.json['comment']
+    # if rating > 5 or rating < 1:
+    #     return  jsonify({"error":"out of range"})
+    feedback_id = create_feedback(user_id, order_id,rating,comment)
+    return "ok", 201
+
+@app.route('/Feedback/<int:id>', methods=['DELETE'])
+def delete_feedback_by_id(id):
+    delete_Feedback(id)
+    return jsonify({"id":id}), 200
+
+@app.route('/Feedback/<int:id>', methods=['PUT'])
+def update_feedback_by_id(id):
+    user_id = request.json['user_id']
+    order_id = request.json['order_id']
+    rating = request.json['rating']
+    comment = request.json['comment']
+    updated = update_Feedback(user_id, order_id,rating,comment,id)
+    return jsonify(updated), 200
+# -----------------feedback---------------------------
 
 if __name__ == '__main__':
     app.run(debug=True)
