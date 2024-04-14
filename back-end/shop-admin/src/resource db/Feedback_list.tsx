@@ -11,7 +11,8 @@ import {
     SearchInput,
     EmailField,
     DateField,
-    ReferenceField
+    ReferenceField,
+    ShowButton
 } from 'react-admin';
 import { Stack } from '@mui/material';
 
@@ -38,6 +39,7 @@ export const Feedback_List = () => (
             <TextField source="rating" />
             <TextField source="comment" />
             <DateField source="feedback_date" />
+            <ShowButton label='show'/>
         </Datagrid>
     </List>
 );
