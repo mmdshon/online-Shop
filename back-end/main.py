@@ -526,7 +526,7 @@ def create_payment():
     order_id = request.json['id']
     payment_method = request.json['payment_method'] 
     amount = request.json['amount'] 
-    result = create_one_payment(order_id, payment_method,amount)
+    id = create_one_payment(order_id, payment_method,amount)
     return (get_Payment(id))
 
 @app.route('/Payments/<int:id>', methods=['DELETE'])
@@ -586,8 +586,9 @@ def create_feedback(user_id, order_id,rating,comment):
     created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
     cur.execute('INSERT INTO Feedback (user_id, order_id,rating,comment,feedback_date) VALUES (?, ?, ?, ?,?)', (user_id, order_id,rating,comment, created_at))
     conn.commit()
+    Feed_id = cur.lastrowid
     conn.close()
-    return "ok"
+    return Feed_id
 
 def delete_Feedback(id):
     conn = get_db_connection()
@@ -628,8 +629,8 @@ def add_feedback():
     comment = request.json['comment']
     # if rating > 5 or rating < 1:
     #     return  jsonify({"error":"out of range"})
-    feedback_id = create_feedback(user_id, order_id,rating,comment)
-    return "ok", 201
+    id = create_feedback(user_id, order_id,rating,comment)
+    return get_feedback(id), 201
 
 @app.route('/Feedback/<int:id>', methods=['DELETE'])
 def delete_feedback_by_id(id):
@@ -693,8 +694,9 @@ def create_ShippingAddresses(user_id, recipient_name, address_line1,address_line
     cur = conn.cursor()
     cur.execute('INSERT INTO ShippingAddresses (user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country) VALUES (?, ?, ?, ?,?, ?, ?, ?)', (user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country))
     conn.commit()
+    ship_id = cur.lastrowid
     conn.close()
-    return "ok"
+    return ship_id
 
 def delete_ShippingAddresses(id):
     conn = get_db_connection()
@@ -737,8 +739,8 @@ def add_ShippingAddresses():
     state = request.json['state']
     postal_code = request.json['postal_code']
     country = request.json['country']
-    ShippingAddresses_id = create_ShippingAddresses(user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country)
-    return "ok", 201
+    id = create_ShippingAddresses(user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country)
+    return get_ShippingAddresses(id), 201
 
 @app.route('/ShippingAddresses/<int:id>', methods=['DELETE'])
 def delete_ShippingAddresses_by_id(id):
