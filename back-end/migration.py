@@ -88,7 +88,7 @@ if not os.path.exists(database_path):
     cur.execute('''
         CREATE TABLE ShippingAddresses (
             address_id INTEGER PRIMARY KEY,
-            customer_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
             recipient_name VARCHAR(100) NOT NULL,
             address_line1 VARCHAR(255) NOT NULL,
             address_line2 VARCHAR(255),
@@ -96,7 +96,7 @@ if not os.path.exists(database_path):
             state VARCHAR(100) NOT NULL,
             postal_code VARCHAR(20) NOT NULL,
             country VARCHAR(100) NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+            FOREIGN KEY (user_id) REFERENCES Users(user_id)
         )
     ''')
     # Create tables Feedback
@@ -108,7 +108,7 @@ if not os.path.exists(database_path):
             rating INT NOT NULL,
             comment TEXT,
             feedback_date DATETIME NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+            FOREIGN KEY (user_id) REFERENCES Users(user_id),
             FOREIGN KEY (order_id) REFERENCES Orders(order_id)
         )
     ''')
