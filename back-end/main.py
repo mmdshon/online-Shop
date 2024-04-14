@@ -472,7 +472,7 @@ def get_Payment(id):
     Payment = cur.fetchone()
     conn.close()
     final_Payment = {
-        "payment_id": Payment[0],
+        "id": Payment[0],
         "order_id": Payment[1],
         "payment_method": Payment[2],
         "amount": Payment[3],
@@ -486,8 +486,9 @@ def create_one_payment(order_id, payment_method, amount):
     current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
     cur.execute('INSERT INTO Payments (order_id, payment_method, amount, payment_date) VALUES (?, ?, ?, ?)', (order_id, payment_method, amount, current_datetime)) 
     conn.commit() 
+    pay_id = cur.lastrowid
     conn.close() 
-    return "ok" 
+    return pay_id
 
 def delete_payment(id):
     conn = get_db_connection()
@@ -526,7 +527,7 @@ def create_payment():
     payment_method = request.json['payment_method'] 
     amount = request.json['amount'] 
     result = create_one_payment(order_id, payment_method,amount)
-    return jsonify({"message": result})
+    return (get_Payment(id))
 
 @app.route('/Payments/<int:id>', methods=['DELETE'])
 def delete_payment_by_id(id):
