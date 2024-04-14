@@ -7,17 +7,18 @@ import {
 } from "react-admin";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
-import { CustomersList } from "./Customers";
-import { CustomerCreate } from "./CustomerCreate";
+import { UsersList } from "./resource db/Users";
+import { UsersCreate } from "./resource db/Userscreate";
 
 export const App = () => (
   <Admin dataProvider={dataProvider} authProvider={authProvider}>
     <Resource
-      name="customer"
-      list={CustomersList}
+      name="Users"
+      list={UsersList}
       edit={EditGuesser}
-      show={ShowGuesser}
-      create={CustomerCreate}
+      show={EditGuesser}
+      create={UsersCreate}
     />
+    
   </Admin>
 );
