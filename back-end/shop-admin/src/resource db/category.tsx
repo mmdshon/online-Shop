@@ -11,7 +11,8 @@ import {
     SearchInput,
     EmailField,
     DateField,
-    ReferenceField
+    ReferenceField,
+    ShowButton
 } from 'react-admin';
 import { Stack } from '@mui/material';
 
@@ -37,6 +38,7 @@ export const CategoryList = () => (
             <TextField source="description" />
             <ReferenceField source="parent_category_id" reference="Categories" link="show" />
             <DateField source="created_at" />
+            <ShowButton label='show'/>
         </Datagrid>
     </List>
 );
