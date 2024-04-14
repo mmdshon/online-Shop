@@ -19,6 +19,8 @@ import { CategoryList } from "./resource db/category";
 import { CategoryCreat } from "./resource db/categoryCreat";
 import { Product_list } from "./resource db/Products";
 import { Products_Creat } from "./resource db/Products_Create";
+import { Feedback_List } from "./resource db/Feedback_list";
+import { Feedback_Creat } from "./resource db/Feedback_Create";
 
 export const App = () => (
   <Admin dataProvider={dataProvider} authProvider={authProvider}>
@@ -63,6 +65,19 @@ export const App = () => (
       edit={EditGuesser}
       show={ShowGuesser}
       create={Products_Creat}
+    />
+    <Resource
+      name="Admin Logs"
+      list={ListGuesser}
+      edit={EditGuesser}
+      show={ShowGuesser}
+    />
+    <Resource
+      name="Feedback"
+      list={Feedback_List}
+      edit={EditGuesser}
+      show={ShowGuesser}
+      create={Feedback_Creat}
     />
   </Admin>
 );
