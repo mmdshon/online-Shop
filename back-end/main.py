@@ -244,6 +244,110 @@ def update_category_by_id(id):
 
 #----------------category--------------------------
 
+#------------------order--------------------------
+#order crud function
+def get_all_orders():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Orders')
+    orders = cur.fetchall()
+    final_orders = []
+    for order in orders:
+        final_orders.append({
+            "id": order[0],
+            "user_id": order[1],
+            "order_date": order[2],
+            "total_amount": order[3],
+            "status": order[4],
+    })
+    conn.close()
+    return final_orders
+def create_order(user_id, order_date, total_amount, status):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO Orders (user_id, order_date, total_amount, status) VALUES (?, ?, ?, ?)', (user_id, order_date, total_amount, status))
+    conn.commit()
+    current_id = cur.lastrowid
+    conn.close()
+    return current_id
+def get_order(order_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Orders WHERE order_id = ?', (order_id,))
+    order = cur.fetchone()
+    conn.close()
+    if order is None:
+        return None
+    order_data = {
+        "id": order[0],
+        "user_id": order[1],
+        "order_date": order[2],
+        "total_amount": order[3],
+        "status": order[4],
+    }
+    return order_data
+
+def delete_order(order_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM Orders WHERE order_id = ?', (order_id,))
+    conn.commit()
+    conn.close()
+    return "ok"
+def update_order(order_id, customer_id, order_date, total_amount, status):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    update_stmt = "UPDATE Orders SET "
+    update_params = []
+    if customer_id is not None:
+        update_stmt += "customer_id = ?, "
+        update_params.append(customer_id)
+    if order_date is not None:
+        order_date_str = order_date.strftime('%Y-%m-%d %H:%M:%S')
+        update_stmt += "order_date = ?, "
+        update_params.append(order_date_str)        
+#order crud routes
+@app.route('/Orders', methods=['GET'])
+def list_orders():
+    orders = get_all_orders()
+    response = jsonify(orders)
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
+    response.headers['Content-Range'] = len(orders)
+    return response
+
+@app.route('/Orders/<int:order_id>', methods=['GET'])
+def order(order_id):
+    order = get_order(order_id)
+    if order is None:
+        return '', 404
+    return order, 201
+
+@app.route('/Orders', methods=['POST'])
+def add_order():
+    user_id = request.json['user_id']
+    order_date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    total_amount = request.json['total_amount']
+    status = request.json['status']
+    order_id = create_order(user_id, order_date, total_amount, status)
+    return get_order(order_id), 201
+
+@app.route('/Orders/<int:order_id>', methods=['DELETE'])
+def delete_order_by_id(order_id):
+    delete_order(order_id)
+    return jsonify({"id": order_id}), 200
+
+@app.route('/Orders/<int:order_id>', methods=['PUT'])
+def update_order_by_id(order_id):
+    user_id = request.json['user_id']
+    order_date_str = request.json['order_date']
+    order_date = datetime.strptime(order_date_str, '%Y-%m-%d %H:%M:%S')
+    total_amount = request.json['total_amount']
+    status = request.json['status']
+    updated_order = update_order(order_id, user_id, order_date, total_amount, status)
+    return jsonify(updated_order), 200
+
+#------------------order--------------------------
+
 
 
 
