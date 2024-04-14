@@ -1,164 +1,156 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify , request
 import sqlite3
 from flask_cors import CORS, cross_origin
+import io
+from datetime import datetime
+from fileinput import filename 
+from hashlib import md5
+import random
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-
-
 # Connect to the database
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect("./data-shop.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-# Get a customer by ID
-def get_customer(user_id):
+# back test
+@app.route('/',methods=['GET'])
+def test():
+    return "ok"
+
+#-----------------user---------------------------
+
+# users crud function
+def get_all_users():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM Users WHERE id = ?', (user_id))
-    customer = cur.fetchone()
-    final_customer = {
-            "user_id": customer[0],
-            "username": customer[1],
-            "password_hash": customer[2],
-            "email": customer[3],
-            "phone_number": customer[4],
-            "registration_date": customer[5],
-            "role": customer[6],
-            "default_shipping_address": customer[7],
+    cur.execute('SELECT * FROM Users')
+    Users = cur.fetchall()
+    final_Users = []
+    for User in Users:
+        final_Users.append({
+            "id": User[0],
+            "Name": User[1],
+            "Password": User[2],
+            "Email": User[3],
+            "Phone": User[4],
+            "registration_date": User[5],
+            "Role": User[6],
+            "address": User[7],
+        })
+    conn.close()
+    return final_Users
+def get_users(users_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Users WHERE user_id = ?', (users_id,))
+    User = cur.fetchone()
+    final_users = {
+            "id": User[0],
+            "Name": User[1],
+            "Password": User[2],
+            "Email": User[3],
+            "Phone": User[4],
+            "registration_date": User[5],
+            "Role": User[6],
+            "address": User[7],
         }
     conn.close()
-    return final_customer
-
-# Create a new customer
-def create_customer(user_id,username,password_hash,email,phone_number,registration_date,role):
+    return final_users
+def create_user(Name, Password, Email, Phone, Role,address ):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO Users (user_id, username, password_hash,email, phone_number, registration_date,role) VALUES (?, ?, ?,?, ?, ?,?)', (user_id, username, password_hash,email,phone_number,registration_date,role))
+    password_hash = md5(Password.encode()).hexdigest()
+    registration_date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    cur.execute('INSERT INTO Users (username, password_hash,email,phone_number,registration_date,role,default_shipping_address) VALUES (?, ?, ?, ? , ?, ?, ?)', (Name, password_hash, Email, Phone, registration_date, Role,address ))
     conn.commit()
     customer_id = cur.lastrowid
     conn.close()
     return customer_id
-
-# Create 10 customers
-# for i in range(1, 11):
-#     name = f'Customer {i}'
-#     email = f'customer{i}@example.com'
-#     phone = f'555-123-456{i}'
-#     create_customer(name, email, phone)
-
-# Update a customer
-def update_customer(user_id,username,password_hash,email,phone_number,registration_date,role):
+def update_user(id,Name, Password, Email, Phone, registration_date, Role,address):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('UPDATE Users SET username = ?, password_hash = ?, email = ?,phone_number = ?, registration_date = ?, role = ? WHERE user_id = ?', (user_id,username,password_hash,email,phone_number,registration_date,role))
+    cur.execute('UPDATE Users SET username = ?, password_hash = ?, email = ?, phone_number = ?, registration_date = ?, role = ? , default_shipping_address = ? WHERE user_id = ?', (Name, Password, Email, Phone, registration_date, Role,address,id))
     conn.commit()
     conn.close()
-    return get_customer(user_id)
-
-# Delete a customer
-def delete_customer(user_id):
+    return get_users(id)
+def delete_user(user_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('DELETE FROM Users WHERE user_id = ?', (user_id))
+    cur.execute('DELETE FROM Users WHERE user_id = ?', (user_id,))
     conn.commit()
     conn.close()
-
-# Get all customers
-def get_all_customers():
+def login_user(user_name,Password):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM Users')
-    customers = cur.fetchall()
-    final_customers = []
-    for customer in customers:
-        final_customers.append({
-            "product_id": customer[0],
-            "name": customer[1],
-            "description": customer[2],
-            "price": customer[3],
-            "category_id": customer[4],
-            "image": customer[5]
-        })
-    conn.close()
-    return final_customers
+    password_hash = md5(Password.encode()).hexdigest()
+    cur.execute('SELECT * FROM Users WHERE username = ? and password_hash = ?', (user_name,password_hash,))
+    user_data = cur.fetchone()
+    if user_data:
+        return "ok"
+    else : 
+        return "mousavi"
 
-#test backend
-@app.route('/', methods=['GET'])
-def test():
-    return "ok"
-
-# CRUD routes
-@app.route('/customer', methods=['GET'])
-def list_customer():
-    customers = get_all_customers()
-    response = jsonify(customers)
+# users CRUD routes
+@app.route('/Users', methods=['GET'])
+def list_users():
+    range = request.args.get('range')
+    users = get_all_users()
+    response = jsonify(users)
     response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
-    response.headers['Content-Range'] = len(customers)
+    response.headers['Content-Range'] = len(users)
     return response
-
-@app.route('/customer', methods=['POST'])
-def add_customer():
-    username = request.json['username']
-    password_hash = request.json['email']
-    email = request.json['email']
-    phone_number = request.json['emphone_numberail']
-    registration_date = request.json['registration_date']
-    role = request.json['role']
-    customer_id = create_customer(username, password_hash, email,phone_number,registration_date,role)
-    return jsonify(get_customer(customer_id)), 201
-
-@app.route('/customer/<int:customer_id>', methods=['GET'])
+@app.route('/Users/<int:user_id>', methods=['GET'])
 def get_customer_by_id(user_id):
-    customer = get_customer(user_id)
-    if customer is None:
+    user = get_users(user_id)
+    if user is None:
         return '', 404
-    return jsonify(customer), 200
-
-@app.route('/customer/<int:customer_id>', methods=['PUT'])
-def update_customer_by_id(user_id):
-    username = request.json['username']
-    password_hash = request.json['email']
-    email = request.json['email']
-    phone_number = request.json['emphone_numberail']
+    return jsonify(user), 200
+@app.route('/Users', methods=['POST'])
+def add_customer():
+    name = request.json['Name']
+    Password = request.json['Password']
+    Email = request.json['Email']
+    Phone = request.json['Phone']
+    Role = request.json['Role']
+    address = request.json['address']
+    user_id = create_user(name, Password, Email, Phone, Role,address)
+    if user_id:
+        return jsonify(get_users(user_id)), 201
+    else:
+        return jsonify("NO")
+@app.route('/Users/<int:user_id>', methods=['PUT'])
+def update_user_by_id(user_id):
+    name = request.json['Name']
+    Password = request.json['Password']
+    Email = request.json['Email']
+    Phone = request.json['Phone']
     registration_date = request.json['registration_date']
-    role = request.json['role']
-    updated = update_customer(user_id,username, password_hash, email,phone_number,registration_date,role)
+    Role = request.json['Role']
+    address = request.json['address']
+    updated = update_user(user_id,name, Password, Email, Phone, registration_date, Role,address)
     return jsonify(updated), 200
-
-@app.route('/customer/<int:customer_id>', methods=['DELETE'])
-def delete_customer_by_id(user_id):
-    delete_customer(user_id)
+@app.route('/Users/<int:user_id>', methods=['DELETE'])
+def delete_user_by_id(user_id):
+    delete_user(user_id)
     return jsonify({"id":user_id}), 200
 
-def get_all_products():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM products')
-    products2 = cur.fetchmany()
-    final_prod = []
-    for product in products2:
-        final_prod.append({
-            "product_id": product[0],
-            "name": product[1],
-            "description": product[2],
-            "price": product[3],
-            "category_id": product[4],
-            "image": product[5]
-        })
-    conn.close()
-    return final_prod
+@app.route('/Users/login', methods=['POST'])
+def login_users():
+    user_name = request.json['user_name']
+    password = request.json['password']
+    response = login_user(user_name, password)
+    return jsonify(response)
 
-@app.route('/products', methods=['GET'])
-def list_customer():
-    customers = get_all_products()
-    response = jsonify(customers)
-    response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
-    response.headers['Content-Range'] = len(customers)
-    return response
+#-----------------user---------------------------
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
