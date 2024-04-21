@@ -4,8 +4,10 @@ import {
   ListGuesser,
   EditGuesser,
   ShowGuesser,
+  houseLightTheme,
+  houseDarkTheme
 } from "react-admin";
-import { dataProvider } from "./dataProvider";
+// import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
 import { UsersList } from "./resource db/Users";
 import { UsersCreate } from "./resource db/Userscreate";
@@ -18,14 +20,18 @@ import { Payment_Creat } from "./resource db/PaymentCreate";
 import { CategoryList } from "./resource db/category";
 import { CategoryCreat } from "./resource db/categoryCreat";
 import { Product_list } from "./resource db/Products";
-import { Products_Creat } from "./resource db/Products_Create";
+import { ProductCreate } from "./resource db/Products_Create";
 import { Feedback_List } from "./resource db/Feedback_list";
 import { Feedback_Creat } from "./resource db/Feedback_Create";
 import { ShippingAddresses_List } from "./resource db/ShippingAddresses_List";
 import { ShippingAddresses_Creat } from "./resource db/ShippingAddresses_Create";
+import { adminList } from "./resource db/adminList";
+import dataProvider from "./dataProvider";
+import { uploadCreate } from "./resource db/uploadCreate";
 
 export const App = () => (
-  <Admin dataProvider={dataProvider} authProvider={authProvider}>
+  <Admin dataProvider={dataProvider} authProvider={authProvider} theme={houseLightTheme}
+  darkTheme={houseDarkTheme}>
     <Resource
       name="Users"
       list={UsersList}
@@ -66,11 +72,11 @@ export const App = () => (
       list={Product_list}
       edit={EditGuesser}
       show={ShowGuesser}
-      create={Products_Creat}
+      create={ProductCreate}
     />
     <Resource
-      name="Admin Logs"
-      list={ListGuesser}
+      name="AdminLogs"
+      list={adminList}
       edit={EditGuesser}
       show={ShowGuesser}
     />
@@ -87,6 +93,10 @@ export const App = () => (
       edit={EditGuesser}
       show={ShowGuesser}
       create={ShippingAddresses_Creat}
+    />
+    <Resource
+      name="upload"
+      create={uploadCreate}
     />
   </Admin>
 );

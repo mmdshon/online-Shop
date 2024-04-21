@@ -1,4 +1,4 @@
-from flask import Flask, jsonify , request
+from flask import Flask, jsonify , request,render_template
 import sqlite3
 from flask_cors import CORS, cross_origin
 import io
@@ -6,6 +6,8 @@ from datetime import datetime
 from fileinput import filename 
 from hashlib import md5
 import random
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -19,9 +21,21 @@ def get_db_connection():
 
 # back test
 @app.route('/',methods=['GET'])
-def test():
-    return "ok"
+def main():
+    return render_template('index.html')
 
+# ----------------------log def------------------
+
+def create_AdminLog(user_id, action):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+    ipAddress = request.remote_addr
+    cur.execute('INSERT INTO AdminLogs (user_id, action,action_date,ip_address) VALUES (?, ?, ?, ?)', (user_id, action, created_at,ipAddress))
+    conn.commit()
+    conn.close()
+    log_id = cur.lastrowid
+    return log_id
 #-----------------user---------------------------
 
 # users crud function
@@ -120,9 +134,11 @@ def add_customer():
     address = request.json['address']
     user_id = create_user(name, Password, Email, Phone, Role,address)
     if user_id:
+        log_id = create_AdminLog("admin1", "create user")
         return jsonify(get_users(user_id)), 201
     else:
         return jsonify("NO")
+
 @app.route('/Users/<int:user_id>', methods=['PUT'])
 def update_user_by_id(user_id):
     name = request.json['Name']
@@ -133,10 +149,12 @@ def update_user_by_id(user_id):
     Role = request.json['Role']
     address = request.json['address']
     updated = update_user(user_id,name, Password, Email, Phone, registration_date, Role,address)
+    log_id = create_AdminLog("admin1", "update user")
     return jsonify(updated), 200
 @app.route('/Users/<int:user_id>', methods=['DELETE'])
 def delete_user_by_id(user_id):
     delete_user(user_id)
+    log_id = create_AdminLog("admin1", "delete user")
     return jsonify({"id":user_id}), 200
 
 @app.route('/Users/login', methods=['POST'])
@@ -228,10 +246,13 @@ def add_Categories():
     description = request.json['description']
     parent_category_id = request.json['parent_category_id']
     Categories_id = create_Categories(name, description, parent_category_id)
+    log_id = create_AdminLog("admin1", "create Categorie")
     return Categories_id , 201
+
 @app.route('/Categories/<int:id>', methods=['DELETE'])
 def delete_category_by_id(id):
     delete_category(id)
+    log_id = create_AdminLog("admin1", "delete Categorie")
     return jsonify({"id":id}), 200
 @app.route('/Category/<int:id>', methods=['PUT'])
 def update_category_by_id(id):
@@ -240,6 +261,7 @@ def update_category_by_id(id):
     parent_category_id = request.json['parent_category_id']
     created_at = request.json['created_at']
     updated = update_category(name, description, parent_category_id, created_at,id)
+    log_id = create_AdminLog("admin1", "update Categorie")
     return jsonify(updated), 200
 
 #----------------category--------------------------
@@ -329,11 +351,13 @@ def add_order():
     total_amount = request.json['total_amount']
     status = request.json['status']
     order_id = create_order(user_id, order_date, total_amount, status)
+    log_id = create_AdminLog("admin1", "create order")
     return get_order(order_id), 201
 
 @app.route('/Orders/<int:order_id>', methods=['DELETE'])
 def delete_order_by_id(order_id):
     delete_order(order_id)
+    log_id = create_AdminLog("admin1", "delete Order")
     return jsonify({"id": order_id}), 200
 
 @app.route('/Orders/<int:order_id>', methods=['PUT'])
@@ -344,6 +368,7 @@ def update_order_by_id(order_id):
     total_amount = request.json['total_amount']
     status = request.json['status']
     updated_order = update_order(order_id, user_id, order_date, total_amount, status)
+    log_id = create_AdminLog("admin1", "update Order")
     return jsonify(updated_order), 200
 
 #------------------order--------------------------
@@ -429,11 +454,13 @@ def add_details():
     quantity = request.json['quantity']
     unit_price = request.json['unit_price']
     detail_id = create_detail(order_id, quantity,unit_price)
+    log_id = create_AdminLog("admin1", "create Order Detail")
     return get_details(detail_id), 200
 
 @app.route('/Order_Details/<int:id>', methods=['DELETE'])
 def delete_detail_by_id(id):
     delete_detail(id)
+    log_id = create_AdminLog("admin1", "delete Order Detail")
     return jsonify({"id":id}), 200
 
 @app.route('/Order_Details/<int:id>', methods=['PUT'])
@@ -443,6 +470,7 @@ def update_detail_by_id(id):
     quantity = request.json['quantity']
     unit_price = request.json['unit_price']
     updated = update_detail(order_id, product_id, quantity,unit_price,id)
+    log_id = create_AdminLog("admin1", "update Order Detail")
     return jsonify(updated), 200
 # -----------------------order-detail---------------------------------
 # ---------------------payment-----------------------
@@ -527,11 +555,13 @@ def create_payment():
     payment_method = request.json['payment_method'] 
     amount = request.json['amount'] 
     id = create_one_payment(order_id, payment_method,amount)
+    log_id = create_AdminLog("admin1", "create Payment")
     return (get_Payment(id))
 
 @app.route('/Payments/<int:id>', methods=['DELETE'])
 def delete_payment_by_id(id):
     delete_payment(id)
+    log_id = create_AdminLog("admin1", "delete Payment")
     return jsonify({"id":id}), 200
 
 @app.route('/Payments/<int:id>', methods=['PUT'])
@@ -541,6 +571,7 @@ def update_payment_by_id(id):
     payment_method = data['payment_method'] 
     amount = data['amount'] 
     updated = update_payment(order_id, payment_method, amount,id)
+    log_id = create_AdminLog("admin1", "update Payment")
     return jsonify(updated), 200
 # ---------------------payment-----------------------
 # -----------------feedback---------------------------
@@ -630,11 +661,13 @@ def add_feedback():
     # if rating > 5 or rating < 1:
     #     return  jsonify({"error":"out of range"})
     id = create_feedback(user_id, order_id,rating,comment)
+    log_id = create_AdminLog("admin1", "create Feedback")
     return get_feedback(id), 201
 
 @app.route('/Feedback/<int:id>', methods=['DELETE'])
 def delete_feedback_by_id(id):
     delete_Feedback(id)
+    log_id = create_AdminLog("admin1", "delete Feedback")
     return jsonify({"id":id}), 200
 
 @app.route('/Feedback/<int:id>', methods=['PUT'])
@@ -644,6 +677,7 @@ def update_feedback_by_id(id):
     rating = request.json['rating']
     comment = request.json['comment']
     updated = update_Feedback(user_id, order_id,rating,comment,id)
+    log_id = create_AdminLog("admin1", "update Feedback")
     return jsonify(updated), 200
 # -----------------feedback---------------------------
 # ----------------ShippingAddresses---------------------------
@@ -740,11 +774,13 @@ def add_ShippingAddresses():
     postal_code = request.json['postal_code']
     country = request.json['country']
     id = create_ShippingAddresses(user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country)
+    log_id = create_AdminLog("admin1", "create ShippingAddresses")
     return get_ShippingAddresses(id), 201
 
 @app.route('/ShippingAddresses/<int:id>', methods=['DELETE'])
 def delete_ShippingAddresses_by_id(id):
     delete_ShippingAddresses(id)
+    log_id = create_AdminLog("admin1", "delete ShippingAddresses")
     return jsonify({"id":id}), 200
 
 @app.route('/ShippingAddresses/<int:id>', methods=['PUT'])
@@ -758,6 +794,7 @@ def update_ShippingAddresses_by_id(id):
     postal_code = request.json['postal_code']
     country = request.json['country']
     updated = update_ShippingAddresses(user_id, recipient_name, address_line1,address_line2, city, state,postal_code,country,id)
+    log_id = create_AdminLog("admin1", "update ShippingAddresses")
     return jsonify(updated), 200
 # ----------------ShippingAddresses---------------------------
 # --------------AdminLogs--------------------------
@@ -771,38 +808,14 @@ def get_all_AdminLogs():
     final_AdminLogs = []
     for AdminLog in AdminLogs:
         final_AdminLogs.append({
-            "category_id": AdminLog[0],
-            "name": AdminLog[1],
-            "description": AdminLog[2],
-            "parent_category_id": AdminLog[3],
-            "created_at": AdminLog[4],
+            "id": AdminLog[0],
+            "user_id": AdminLog[1],
+            "action": AdminLog[2],
+            "action_date": AdminLog[3],
+            "ip_address": AdminLog[4],
         })
     conn.close()
     return final_AdminLogs
-
-def get_AdminLog(id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM AdminLogs WHERE log_id = ?',(id,))
-    AdminLog = cur.fetchone()
-    conn.close()
-    final_AdminLog = {
-        "user_id": AdminLog[0],
-        "action": AdminLog[1],
-        "action_date": AdminLog[2],
-        "ip_address": AdminLog[3]
-        }
-    return final_AdminLog
-
-def create_AdminLog(user_id, action):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    created_at = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-    ipAddress = request.remote_addr
-    cur.execute('INSERT INTO AdminLogs (user_id, action,action_date,ip_address) VALUES (?, ?, ?, ?)', (user_id, action, created_at,ipAddress))
-    conn.commit()
-    conn.close()
-    return "ok"
 
 def delete_AdminLog(id):
     conn = get_db_connection()
@@ -810,14 +823,6 @@ def delete_AdminLog(id):
     cur.execute('DELETE FROM AdminLogs WHERE log_id = ?', (id,))
     conn.commit()
     conn.close()
-    
-def update_AdminLog(user_id, action,id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('UPDATE AdminLogs SET user_id = ?, action = ? WHERE log_id = ?', (user_id,action,id))
-    conn.commit()
-    conn.close()
-    return get_AdminLog(id)
 
 # category crud routes
 @app.route('/AdminLogs', methods=['GET'])
@@ -828,37 +833,141 @@ def list_AdminLogs():
     response.headers['Content-Range'] = len(AdminLogs)
     return response
 
-@app.route('/AdminLog/<int:id>', methods=['GET'])
-def AdminLog(id):
-    AdminLog = get_AdminLog(id)
-    if AdminLog is None:
-        return '', 404
-    return jsonify(AdminLog), 200
-
-@app.route('/AdminLog', methods=['POST'])
-def add_AdminLog():
-    user_id = request.json['user_id']
-    action = request.json['action']
-    AdminLog_id = create_AdminLog(user_id, action)
-    return "ok", 201
-
-@app.route('/AdminLog/<int:id>', methods=['DELETE'])
+@app.route('/AdminLogs/<int:id>', methods=['DELETE'])
 def delete_AdminLog_by_id(id):
     delete_AdminLog(id)
     return jsonify({"id":id}), 200
 
-@app.route('/AdminLog/<int:id>', methods=['PUT'])
-def update_AdminLog_by_id(id):
-    user_id = request.json['user_id']
-    action = request.json['action']
-    updated = update_AdminLog(user_id,action,id)
-    return jsonify(updated), 200
 # --------------AdminLogs--------------------------
 #--------------------product-----------------------------
 
+#product crud function
+def get_all_product():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Products')
+    product = cur.fetchall()
+    final_Products = []
+    for pro in product:
+        final_Products.append({
+            "id": pro[0],
+            "name": pro[1],
+            "description": pro[2],
+            "price": pro[3],
+            "category_id": pro[4],
+            "image": pro[5]
+        })
+    conn.close()
+    return final_Products
+
+def get_product(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM Products WHERE product_id = ?',(id,))
+    AdminLog = cur.fetchone()
+    conn.close()
+    final_Products = {
+        "name": AdminLog[0],
+        "description": AdminLog[1],
+        "price": AdminLog[2],
+        "category_id": AdminLog[3],
+        "image": AdminLog[4]
+        }
+    return final_Products
+
+def create_product(name, description,price,category_id,image):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO Products (name, description,price,category_id,picture_path) VALUES (?, ?, ?, ?,?)', (name, description,price,category_id,image))
+    # file = request.files['image']
+    # if file:
+    #     filename = secure_filename(file.filename)
+    #     file.save(os.path.join(app.config['./image_product'], filename))
+    # else:
+    #     return jsonify({'error': 'No image provided'}), 400
+    conn.commit()
+    prod_id = cur.lastrowid
+    conn.close()
+    return prod_id
+
+# @app.route('/Products', methods=['POST'])
+# def add_product():
+#     name = request.json('name')
+#     description = request.json('description')
+#     price = request.json('price')
+#     category_id = request.json('category_id')
+#     picture = request.json('picture')
+#     # create_product(name, description, price, category_id, picture)
+#     print(name, description, price, category_id, picture)
+#     return "ok"
+
+def delete_product(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM Products WHERE product_id = ?', (id,))
+    conn.commit()
+    conn.close()
+
+def update_product(name, description,price,category_id,id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('UPDATE AdminLogs SET name = ?, description = ?, price = ?, category_id = ? WHERE product_id = ?', (name,description,price,category_id,id))
+    conn.commit()
+    conn.close()
+    return get_product(id)
+
+# category crud routes
+@app.route('/Products', methods=['GET'])
+def list_Products():
+    Products = get_all_product()
+    response = jsonify(Products)
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
+    response.headers['Content-Range'] = len(Products)
+    return response
+
+@app.route('/Products/<int:id>', methods=['GET'])
+def product(id):
+    Products = get_product(id)
+    if Products is None:
+        return '', 404
+    return jsonify(Products), 200
+
+@app.route('/Products', methods=['POST'])
+def add_Products():
+    name=request.json['name']
+    description=request.json['description']
+    price=request.json['price']
+    category_id=request.json['category_id']
+    image=request.json['image']
+    id = create_product(name,description,price,category_id,image)
+    log_id = create_AdminLog("admin1", "create Products")
+    return get_product(id), 201
+
+@app.route('/Products/<int:id>', methods=['DELETE'])
+def delete_Products_by_id(id):
+    get_product(id)
+    log_id = create_AdminLog("admin1", "delete Products")
+    return jsonify({"id":id}), 200
+
+@app.route('/Products/<int:id>', methods=['PUT'])
+def update_Products_by_id(id):
+    name = request.json['name']
+    description = request.json['description']
+    price = request.json['price']
+    category_id = request.json['category_id']
+    updated = get_product(name,description,price,category_id,id)
+    log_id = create_AdminLog("admin1", "update Products")
+    return jsonify(updated), 200
+# -------------------------upload  file-------------------------------
+
+@app.route('/upload', methods = ['POST'])   
+def success():
+    if request.method == 'POST':   
+        f = request.files['mmd'] 
+        f.save("./files/"+f.filename)  
+        return "True"
 
 
-# product
 # data = request.get_json()
 # image = request.files['image']
 
@@ -939,4 +1048,4 @@ def update_AdminLog_by_id(id):
 #     return "ok"
 #--------------------product-----------------------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,host="0.0.0.0")

@@ -16,8 +16,8 @@ import {
 import { Stack } from '@mui/material';
 
 const CustomerFilters = [
-    <SearchInput source="name" alwaysOn />,
-    <TextInput label="email" source="email" defaultValue="irmrbug@gmail.com" />,
+    <SearchInput source="Name" resettable alwaysOn />,
+    <TextInput label="email" source="Email" />
 ];
 const ListToolbar = () => (
     <Stack direction="row" justifyContent="space-between">
